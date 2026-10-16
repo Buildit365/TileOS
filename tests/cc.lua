@@ -81,10 +81,8 @@ local function fakeTerm(w, h, isColor)
     text = tostring(text)
     for i = 1, #text do
       if curX >= 1 and curX <= w and curY >= 1 and curY <= h then
-        local slot = cell(curX, curY)
-        slot[1] = text:sub(i, i)
-        slot[2] = fg
-        slot[3] = bg
+        buf[curY] = buf[curY] or {}
+        buf[curY][curX] = { text:sub(i, i), fg, bg }
       end
       curX = curX + 1
     end
@@ -93,8 +91,8 @@ local function fakeTerm(w, h, isColor)
   function term.clear()
     buf = {}
     for y = 1, h do
+      buf[y] = {}
       for x = 1, w do
-        cell(x, y)
         buf[y][x] = { " ", fg, bg }
       end
     end
@@ -104,6 +102,7 @@ local function fakeTerm(w, h, isColor)
     if curY < 1 or curY > h then
       return
     end
+    buf[curY] = buf[curY] or {}
     for x = 1, w do
       buf[curY][x] = { " ", fg, bg }
     end
@@ -134,7 +133,171 @@ local function fakeTerm(w, h, isColor)
   return term
 end
 
+local function norm(path)
+  path = tostring(path or "")
+  path = path:gsub("^/+", ""):gsub("/+$", "")
+  return path
+end
+
+local function fakeFs(tree)
+  tree = tree or {}
+  local fs = {}
+
+  function fs.combine(a, b)
+    a = norm(a)
+    b = norm(b)
+    if a == "" then
+      return b
+    end
+    if b == "" then
+      return a
+    end
+    return a .. "/" .. b
+  end
+
+  function fs.getName(path)
+    path = norm(path)
+    return path:match("([^/]+)$") or ""
+  end
+
+  function fs.getDir(path)
+    path = norm(path)
+    return path:match("^(.*)/[^/]+$") or ""
+  end
+
+  function fs.exists(path)
+    path = norm(path)
+    if path == "" then
+      return true
+    end
+    if tree[path] ~= nil then
+      return true
+    end
+    local prefix = path .. "/"
+    for key in pairs(tree) do
+      if key:sub(1, #prefix) == prefix then
+        return true
+      end
+    end
+    return false
+  end
+
+  function fs.isDir(path)
+    path = norm(path)
+    if path == "" then
+      return true
+    end
+    if type(tree[path]) == "string" then
+      return false
+    end
+    if tree[path] == true then
+      return true
+    end
+    local prefix = path .. "/"
+    for key in pairs(tree) do
+      if key:sub(1, #prefix) == prefix then
+        return true
+      end
+    end
+    return false
+  end
+
+  function fs.list(path)
+    path = norm(path)
+    local prefix = path == "" and "" or (path .. "/")
+    local seen = {}
+    local names = {}
+    for key in pairs(tree) do
+      local rest = key
+      if prefix == "" or key:sub(1, #prefix) == prefix then
+        if prefix ~= "" then
+          rest = key:sub(#prefix + 1)
+        end
+        local name = rest:match("^([^/]+)")
+        if name and not seen[name] then
+          seen[name] = true
+          names[#names + 1] = name
+        end
+      end
+    end
+    table.sort(names)
+    return names
+  end
+
+  function fs.makeDir(path)
+    path = norm(path)
+    if path ~= "" and type(tree[path]) ~= "string" then
+      tree[path] = true
+    end
+  end
+
+  function fs.delete(path)
+    path = norm(path)
+    if path == "" then
+      return
+    end
+    tree[path] = nil
+    local prefix = path .. "/"
+    for key in pairs(tree) do
+      if key:sub(1, #prefix) == prefix then
+        tree[key] = nil
+      end
+    end
+  end
+
+  function fs.open(path, mode)
+    path = norm(path)
+    if mode == "r" then
+      if type(tree[path]) ~= "string" then
+        return nil
+      end
+      local data = tree[path]
+      local pos = 1
+      return {
+        readAll = function()
+          return data
+        end,
+        readLine = function()
+          if pos > #data then
+            return nil
+          end
+          local newline = data:find("\n", pos, true)
+          local line
+          if newline then
+            line = data:sub(pos, newline - 1):gsub("\r$", "")
+            pos = newline + 1
+          else
+            line = data:sub(pos)
+            pos = #data + 1
+          end
+          return line
+        end,
+        close = function()
+        end,
+      }
+    end
+    if mode == "w" then
+      local chunks = {}
+      return {
+        write = function(text)
+          chunks[#chunks + 1] = text
+        end,
+        close = function()
+          tree[path] = table.concat(chunks)
+        end,
+      }
+    end
+    return nil
+  end
+
+  return fs, tree
+end
+
+_G.fakeTerm = fakeTerm
+_G.fakeFs = fakeFs
+
 return {
   colors = colors,
   fakeTerm = fakeTerm,
+  fakeFs = fakeFs,
 }
