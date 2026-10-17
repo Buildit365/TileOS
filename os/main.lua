@@ -8,6 +8,7 @@ local runner = require("runner")
 local layout = require("layout")
 local runtime = require("runtime")
 local tabs = require("tabs")
+local input = require("input")
 
 local main = {}
 
@@ -264,12 +265,45 @@ function main.run(api)
 
   paint()
 
+  local ctrl = {}
+  local armTerminate = false
+
+  local function ctrlDown()
+    return ctrl[input.code("leftCtrl")] or ctrl[input.code("rightCtrl")]
+  end
+
   while true do
     local packed = runtime.pack(api.pullEventRaw())
     if packed[1] == nil then
       return "stop"
     end
-    if view.mode == "split" and packed[1] == "monitor_touch" and packed[2] == view.messageSide then
+    local skip = false
+    if packed[1] == "key_up" then
+      local pressed = armTerminate and input.isTerminateKey(packed[2])
+      if input.isTerminateKey(packed[2]) then
+        armTerminate = false
+      end
+      if input.isCtrl(packed[2]) then
+        ctrl[packed[2]] = nil
+      end
+      if pressed then
+        packed = { "terminate" }
+      end
+    elseif packed[1] == "key" then
+      if input.isCtrl(packed[2]) then
+        ctrl[packed[2]] = true
+      end
+      if input.isTerminateKey(packed[2]) and ctrlDown() then
+        if not packed[3] then
+          armTerminate = true
+        end
+        skip = true
+      end
+    elseif packed[1] == "terminate" and armTerminate then
+      armTerminate = false
+    end
+    if skip then
+    elseif view.mode == "split" and packed[1] == "monitor_touch" and packed[2] == view.messageSide then
       if layout.tooSmallHit(packed[3], packed[4]) == "use_computer" then
         config.write(api.fs, "terminal")
         if view.message then

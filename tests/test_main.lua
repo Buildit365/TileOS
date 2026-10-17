@@ -258,6 +258,129 @@ T.test("enter on the home grid opens the highlighted app", function()
   T.assertEq(windows[1].line(2):sub(1, 6), "opened")
 end)
 
+T.test("tapping Ctrl+T leaves an app and the next tap leaves Tile", function()
+  local input = dofile("os/input.lua")
+  local main = dofile("os/main.lua")
+  local fs = fakeFs({
+    ["apps/demo/main.lua"] = [[
+while true do
+  os.pullEvent()
+end
+]],
+  })
+  local computer = fakeTerm(51, 19, true)
+  local shots = {}
+  local pulls = 0
+  local queue = {
+    { "key", input.code("enter"), false },
+    { "key", input.code("leftCtrl"), false },
+    { "key", input.code("t"), false },
+    { "key_up", input.code("t") },
+    { "key_up", input.code("leftCtrl") },
+    { "key", input.code("leftCtrl"), false },
+    { "key", input.code("t"), false },
+    { "key_up", input.code("t") },
+  }
+  local result = main.run({
+    fs = fs,
+    osDir = "os",
+    native = function()
+      return computer
+    end,
+    current = function()
+      return computer
+    end,
+    wrap = function()
+      return nil
+    end,
+    peripheral = {
+      getNames = function()
+        return {}
+      end,
+      getType = function()
+        return nil
+      end,
+    },
+    window = function(parent, x, y, w, h)
+      return fakeTerm(w, h, parent.isColor())
+    end,
+    pullEventRaw = function()
+      pulls = pulls + 1
+      shots[pulls] = computer.line(1):sub(1, 4)
+      local event = table.remove(queue, 1)
+      if not event then
+        return nil
+      end
+      return unpack(event)
+    end,
+  })
+  T.assertEq(result, "exit")
+  T.assertEq(pulls, 8)
+  T.assertEq(shots[5], "Tile")
+end)
+
+T.test("holding Ctrl+T does not leave the app and then exit as well", function()
+  local input = dofile("os/input.lua")
+  local main = dofile("os/main.lua")
+  local fs = fakeFs({
+    ["apps/demo/main.lua"] = [[
+while true do
+  os.pullEvent()
+end
+]],
+  })
+  local computer = fakeTerm(51, 19, true)
+  local shots = {}
+  local pulls = 0
+  local queue = {
+    { "key", input.code("enter"), false },
+    { "key", input.code("leftCtrl"), false },
+    { "key", input.code("t"), false },
+    { "terminate" },
+    { "key_up", input.code("t") },
+    { "key_up", input.code("leftCtrl") },
+    { "key", input.code("leftCtrl"), false },
+    { "key", input.code("t"), false },
+    { "key_up", input.code("t") },
+  }
+  local result = main.run({
+    fs = fs,
+    osDir = "os",
+    native = function()
+      return computer
+    end,
+    current = function()
+      return computer
+    end,
+    wrap = function()
+      return nil
+    end,
+    peripheral = {
+      getNames = function()
+        return {}
+      end,
+      getType = function()
+        return nil
+      end,
+    },
+    window = function(parent, x, y, w, h)
+      return fakeTerm(w, h, parent.isColor())
+    end,
+    pullEventRaw = function()
+      pulls = pulls + 1
+      shots[pulls] = computer.line(1):sub(1, 4)
+      local event = table.remove(queue, 1)
+      if not event then
+        return nil
+      end
+      return unpack(event)
+    end,
+  })
+  T.assertEq(result, "exit")
+  T.assertEq(pulls, 9)
+  T.assertEq(shots[5], "Tile")
+end)
+
 T.test("a tiny saved monitor shows the message and the computer still opens Tile", function()
   local main = dofile("os/main.lua")
   local fs = fakeFs({
