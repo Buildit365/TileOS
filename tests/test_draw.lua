@@ -20,8 +20,10 @@ T.test("a letter tile and a painted tile land on the grid", function()
   draw.home(term, metrics, {
     { label = "Files", accent = "blue", icon = nil },
   }, 1, true)
-  T.assertEq(term.line(4):sub(1, 5), "Files")
-  local ch, _, bg = term.cell(3, 2)
+  T.assertEq(term.line(5):sub(2, 6), "Files")
+  T.assertEq(term.cell(1, 3), " ")
+  T.assertEq(term.cell(2, 2), " ")
+  local ch, _, bg = term.cell(4, 3)
   T.assertEq(ch, "F")
   T.assertEq(bg, colors.white)
 
@@ -32,7 +34,7 @@ T.test("a letter tile and a painted tile land on the grid", function()
   draw.home(term, metrics, {
     { label = "Shell", accent = "lime", icon = picture },
   }, 1, true)
-  local _, _, accent = term.cell(3, 2)
+  local _, _, accent = term.cell(4, 3)
   T.assertEq(accent, colors.lime)
 end)
 

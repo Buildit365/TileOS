@@ -11,7 +11,7 @@ end
 
 T.test("a grid click launches that app", function()
   local session = dofile("os/session.lua")
-  local state, effect = session.reduce(session.new(), { type = "click", x = 1, y = 2 }, ctx(51, 19, 3))
+  local state, effect = session.reduce(session.new(), { type = "click", x = 2, y = 3 }, ctx(51, 19, 3))
   T.assertEq(effect, "launch")
   T.assertEq(state.screen, "app")
   T.assertEq(state.stack[1].label, "A1")
@@ -21,7 +21,7 @@ end)
 T.test("Home and Ctrl+T clear the stack", function()
   local session = dofile("os/session.lua")
   local state = session.new()
-  state, _ = session.reduce(state, { type = "click", x = 1, y = 2 }, ctx(51, 19, 1))
+  state, _ = session.reduce(state, { type = "click", x = 2, y = 3 }, ctx(51, 19, 1))
   state, _ = session.reduce(state, {
     type = "push",
     path = "/rom/programs/edit.lua",
@@ -40,7 +40,7 @@ end)
 
 T.test("a child exit resumes the parent and an error stays until Home", function()
   local session = dofile("os/session.lua")
-  local state, effect = session.reduce(session.new(), { type = "click", x = 1, y = 2 }, ctx(51, 19, 1))
+  local state, effect = session.reduce(session.new(), { type = "click", x = 2, y = 3 }, ctx(51, 19, 1))
   state, effect = session.reduce(state, { type = "child_error", message = "boom" }, ctx(51, 19, 1))
   T.assertEq(effect, "show_error")
   T.assertEq(state.error, "boom")
@@ -50,7 +50,7 @@ T.test("a child exit resumes the parent and an error stays until Home", function
   T.assertEq(state.error, nil)
 
   state = session.new()
-  state = session.reduce(state, { type = "click", x = 1, y = 2 }, ctx(51, 19, 1))
+  state = session.reduce(state, { type = "click", x = 2, y = 3 }, ctx(51, 19, 1))
   state = session.reduce(state, { type = "push", path = "/edit", args = {}, label = "A1" }, ctx(51, 19, 1))
   state, effect = session.reduce(state, { type = "child_done" }, ctx(51, 19, 1))
   T.assertEq(effect, "resume")

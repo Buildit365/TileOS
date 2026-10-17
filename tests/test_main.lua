@@ -47,7 +47,7 @@ error("clicked " .. x .. "," .. y, 0)
       return win
     end,
     pullEventRaw = scripted({
-      { "mouse_click", 1, 1, 2 },
+      { "mouse_click", 1, 2, 3 },
       { "mouse_click", 1, 2, 3 },
       { "mouse_click", 1, 1, 1 },
       { "terminate" },

@@ -4,6 +4,7 @@ local layout = {
   ICON_W = 3,
   ICON_H = 2,
   GAP = 1,
+  MARGIN = 1,
   MIN_W = 15,
   MIN_H = 10,
 }
@@ -17,15 +18,19 @@ end
 
 function layout.metrics(w, h)
   local tooSmall = w < layout.MIN_W or h < layout.MIN_H
-  local contentH = h - 1
-  if contentH < 0 then
-    contentH = 0
+  local usableW = w - layout.MARGIN * 2
+  local usableH = h - 1 - layout.MARGIN * 2
+  if usableW < 0 then
+    usableW = 0
+  end
+  if usableH < 0 then
+    usableH = 0
   end
   local cols = 0
   local rows = 0
   if not tooSmall then
-    cols = fit(w, layout.CELL_W, layout.GAP)
-    rows = fit(contentH, layout.CELL_H, layout.GAP)
+    cols = fit(usableW, layout.CELL_W, layout.GAP)
+    rows = fit(usableH, layout.CELL_H, layout.GAP)
   end
   return {
     w = w,
@@ -34,8 +39,9 @@ function layout.metrics(w, h)
     cols = cols,
     rows = rows,
     pageSize = cols * rows,
-    contentY = 2,
-    contentH = contentH,
+    originX = 1 + layout.MARGIN,
+    contentY = 2 + layout.MARGIN,
+    contentH = usableH,
   }
 end
 
@@ -47,21 +53,22 @@ function layout.pageCount(appCount, pageSize)
 end
 
 function layout.cellOrigin(col, row)
-  local x = 1 + col * (layout.CELL_W + layout.GAP)
-  local y = 2 + row * (layout.CELL_H + layout.GAP)
+  local x = (1 + layout.MARGIN) + col * (layout.CELL_W + layout.GAP)
+  local y = (2 + layout.MARGIN) + row * (layout.CELL_H + layout.GAP)
   return x, y
 end
 
 function layout.hit(metrics, x, y, page, appCount)
-  if metrics.tooSmall or y < metrics.contentY or appCount <= 0 then
+  if metrics.tooSmall or y < metrics.contentY or x < metrics.originX or appCount <= 0 then
     return nil
   end
   local strideX = layout.CELL_W + layout.GAP
   local strideY = layout.CELL_H + layout.GAP
+  local localX = x - metrics.originX
   local localY = y - metrics.contentY
-  local col = math.floor((x - 1) / strideX)
+  local col = math.floor(localX / strideX)
   local row = math.floor(localY / strideY)
-  local inX = (x - 1) % strideX
+  local inX = localX % strideX
   local inY = localY % strideY
   if col < 0 or row < 0 or col >= metrics.cols or row >= metrics.rows then
     return nil
