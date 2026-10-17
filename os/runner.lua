@@ -55,11 +55,25 @@ local function appTerm(win)
   return proxy
 end
 
+local function copyVisible(into, source, seen)
+  if type(source) ~= "table" or seen[source] then
+    return
+  end
+  seen[source] = true
+  for key, value in pairs(source) do
+    into[key] = value
+  end
+  local meta = getmetatable(source)
+  if type(meta) == "table" then
+    copyVisible(into, meta.__index, seen)
+  end
+end
+
 function runner.launch(spec)
   local env = {}
-  for key, value in pairs(_G) do
-    env[key] = value
-  end
+  local seen = {}
+  copyVisible(env, _G, seen)
+  copyVisible(env, spec.parentEnv, seen)
   env._G = _G
   env.term = appTerm(spec.win)
   env.fs = spec.fs

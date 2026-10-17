@@ -1,5 +1,38 @@
 local T = tile_test
 
+T.test("apps inherit require from the shell environment", function()
+  local runner = dofile("os/runner.lua")
+  local saved = _G.require
+  _G.require = nil
+  local ok, err = pcall(function()
+    local fs = fakeFs({
+      ["apps/check/main.lua"] = [[
+if type(require) ~= "function" then
+  error("require missing", 0)
+end
+if shell == nil then
+  error("shell missing", 0)
+end
+os.pullEvent()
+]],
+    })
+    local frame = runner.launch({
+      fs = fs,
+      path = "apps/check/main.lua",
+      args = {},
+      win = fakeTerm(12, 4, true),
+      displayName = "terminal",
+      parentEnv = { require = saved, shell = {} },
+    })
+    local result = runner.pump(frame, nil)
+    T.assertEq(result.kind, "wait", result.message)
+  end)
+  _G.require = saved
+  if not ok then
+    error(err, 0)
+  end
+end)
+
 T.test("apps can call require and term.current", function()
   local runner = dofile("os/runner.lua")
   local fs = fakeFs({

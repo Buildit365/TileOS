@@ -106,6 +106,7 @@ function main.run(api)
       args = top.args or {},
       win = window,
       displayName = view.displayName or "terminal",
+      parentEnv = _ENV,
     })
     frames[#frames + 1] = frame
     return dispatch(runner.pump(frame, nil))
