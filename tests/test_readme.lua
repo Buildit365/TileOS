@@ -9,7 +9,7 @@ local function read(path)
 end
 
 local function listLua()
-  local pipe = io.popen("find os install.lua -name '*.lua'")
+  local pipe = io.popen("find os install.lua fetch.lua -name '*.lua'")
   local names = {}
   for name in pipe:lines() do
     names[#names + 1] = name
