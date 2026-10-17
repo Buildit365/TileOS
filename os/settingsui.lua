@@ -113,8 +113,8 @@ function settingsui.draw(term, model)
   term.clear()
   if model.confirm then
     writeRow(term, 1, "Exit to CraftOS?", w, false)
-    writeRow(term, 3, "Yes", w, model.cursor == 1)
-    writeRow(term, 4, "No", w, model.cursor == 2)
+    writeRow(term, 3, "Yes", w, model.keysOn and model.cursor == 1)
+    writeRow(term, 4, "No", w, model.keysOn and model.cursor == 2)
     return
   end
   local choice = rows(model)

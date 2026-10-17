@@ -49,6 +49,13 @@ T.test("settings shows color, the selected display, and exit", function()
   T.assertEq(model.confirm, true)
   settingsui.draw(term, model)
   T.assertEq(term.line(1):sub(1, 16), "Exit to CraftOS?")
+  local _, _, noBg = term.cell(1, 4)
+  T.assertEq(noBg, colors.white)
+  model.keysOn = true
+  settingsui.draw(term, model)
+  local _, _, keyed = term.cell(1, 4)
+  T.assertEq(keyed, colors.black)
+  model.keysOn = false
   model, command = settingsui.click(model, term, 1, 4)
   T.assertEq(command, nil)
   T.assertEq(model.confirm, false)
