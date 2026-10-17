@@ -1,5 +1,30 @@
 local T = tile_test
 
+T.test("apps can call require and term.current", function()
+  local runner = dofile("os/runner.lua")
+  local fs = fakeFs({
+    ["apps/check/main.lua"] = [[
+if type(require) ~= "function" then
+  error("require missing", 0)
+end
+local current = term.current()
+current.write("ok")
+os.pullEvent()
+]],
+  })
+  local win = fakeTerm(10, 4, true)
+  local frame = runner.launch({
+    fs = fs,
+    path = "apps/check/main.lua",
+    args = {},
+    win = win,
+    displayName = "terminal",
+  })
+  local result = runner.pump(frame, nil)
+  T.assertEq(result.kind, "wait")
+  T.assertEq(win.line(1):sub(1, 2), "ok")
+end)
+
 T.test("an app receives translated events and can push a child", function()
   local runner = dofile("os/runner.lua")
   local fs = fakeFs({

@@ -12,9 +12,56 @@ local function readAll(fs, path)
   return text
 end
 
+local function copyFunctions(into, source)
+  if type(source) ~= "table" then
+    return
+  end
+  for key, value in pairs(source) do
+    if type(value) == "function" then
+      into[key] = value
+    end
+  end
+end
+
+local function appTerm(win)
+  local proxy = {}
+  if type(term) == "table" then
+    copyFunctions(proxy, term)
+    if type(term.current) == "function" then
+      copyFunctions(proxy, term.current())
+    end
+  end
+  copyFunctions(proxy, win)
+  function proxy.current()
+    return proxy
+  end
+  if type(term) == "table" and type(term.native) == "function" then
+    function proxy.native()
+      return term.native()
+    end
+  end
+  if type(term) == "table" and type(term.redirect) == "function" then
+    function proxy.redirect(target)
+      if target == proxy then
+        target = win
+      end
+      return term.redirect(target)
+    end
+  else
+    function proxy.redirect()
+      return proxy
+    end
+  end
+  return proxy
+end
+
 function runner.launch(spec)
-  local env = setmetatable({}, { __index = _G })
-  env.term = spec.win
+  local env = {}
+  for key, value in pairs(_G) do
+    env[key] = value
+  end
+  env._G = _G
+  env.term = appTerm(spec.win)
   env.fs = spec.fs
   env.os = setmetatable({}, { __index = os })
 

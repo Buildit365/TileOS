@@ -94,10 +94,17 @@ end
 
 function draw.error(term, message)
   fill(term, colors.white, colors.black)
-  local w = term.getSize()
+  local w, h = term.getSize()
   term.write("App error")
-  term.setCursorPos(1, 2)
-  term.write(tostring(message or ""):sub(1, w))
+  local text = tostring(message or "")
+  local y = 2
+  local index = 1
+  while index <= #text and y <= h do
+    term.setCursorPos(1, y)
+    term.write(text:sub(index, index + w - 1))
+    index = index + w
+    y = y + 1
+  end
 end
 
 function draw.tooSmall(term, showButton)
