@@ -37,9 +37,10 @@ Exit to CraftOS from Settings lasts until the next boot. The next boot opens Til
 
 ## Controls
 
-- Click an icon, or the five-character name under it, to open that app.
-- The top row is the bar. On the home screen it says `Tile`. When more than one page of icons exists, `<` and `>` sit at the right.
-- While an app is open, `Home` is in the first four columns of the bar. Home always returns to the grid.
+- Click an icon, or the five-character name under it, to open that app. Advanced computers, advanced pocket computers, and monitors can do this.
+- A normal computer and a normal pocket computer have no mouse. Open the screen, then use the arrow keys. The highlighted name is drawn in white on black. Enter opens that app. The same keys work in Files and Settings. Shell still uses normal CraftOS typing.
+- The top row is the bar. On the home screen it says `Tile`. When more than one page of icons exists, `<` and `>` sit at the right. Arrow keys also move onto the next page.
+- While an app is open, `Home` is in the first four columns of the bar. Home always returns to the grid. Ctrl+T does that too when you cannot click.
 - Ctrl+T inside an app returns to the grid. Ctrl+T on the grid leaves Tile and drops you into CraftOS.
 - Ctrl+R and Ctrl+S stay the mod's reboot and shutdown. Tile does not call them.
 - A monitor is clicked in the world. That is a different event from a click inside the computer screen, and Tile listens for the one that matches the screen it is drawing on.

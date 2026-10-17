@@ -97,7 +97,7 @@ function main.run(api)
       return
     end
     if state.screen == "home" then
-      draw.home(ui, ctx.metrics, ctx.apps, state.page, ui.isColor())
+      draw.home(ui, ctx.metrics, ctx.apps, state.page, ui.isColor(), state.cursor)
       draw.bar(ui, {
         mode = "home",
         pages = layout.pageCount(#ctx.apps, ctx.metrics.pageSize),
@@ -300,10 +300,14 @@ function main.run(api)
         frame = nil
         window = nil
         paint()
-      elseif class.kind == "pointer" then
+      elseif class.kind == "pointer" or (class.kind == "pass" and packed[1] == "key" and state.screen ~= "app") then
         local hadShell = stackHasShell(state.stack)
         local effect
-        state, effect = session.reduce(state, { type = "click", x = class.x, y = class.y }, ctx)
+        if class.kind == "pointer" then
+          state, effect = session.reduce(state, { type = "click", x = class.x, y = class.y }, ctx)
+        else
+          state, effect = session.reduce(state, { type = "key", code = packed[2], held = packed[3] }, ctx)
+        end
         if hadShell and effect == "go_home" then
           closeShellTabs({ { id = "shell" } })
         end
@@ -325,13 +329,15 @@ function main.run(api)
           if exited == "exit" then
             return exitToShell()
           end
-        elseif state.screen == "app" and frame and not state.error and class.y >= 2 then
+        elseif effect == "move" then
+          paint()
+        elseif class.kind == "pointer" and state.screen == "app" and frame and not state.error and class.y >= 2 then
           local exited = forward({ "mouse_click", 1, class.x, class.y - 1 })
           if exited == "exit" then
             return exitToShell()
           end
           paint()
-        else
+        elseif class.kind == "pointer" then
           paint()
         end
       elseif class.kind == "pointer_pass" and class.y and class.y >= 2 then

@@ -22,6 +22,7 @@ fetch.files = {
   "os/fileslist.lua",
   "os/filesui.lua",
   "os/icon.lua",
+  "os/input.lua",
   "os/layout.lua",
   "os/main.lua",
   "os/runner.lua",

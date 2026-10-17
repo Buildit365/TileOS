@@ -52,6 +52,42 @@ function layout.pageCount(appCount, pageSize)
   return math.ceil(appCount / pageSize)
 end
 
+function layout.step(metrics, index, appCount, way)
+  if appCount <= 0 or metrics.cols <= 0 or metrics.pageSize <= 0 then
+    return 1
+  end
+  if index < 1 then
+    index = 1
+  end
+  if index > appCount then
+    index = appCount
+  end
+  local nextIndex = index
+  if way == "right" then
+    nextIndex = index + 1
+  elseif way == "left" then
+    nextIndex = index - 1
+  elseif way == "down" then
+    nextIndex = index + metrics.cols
+  elseif way == "up" then
+    nextIndex = index - metrics.cols
+  end
+  if nextIndex < 1 then
+    nextIndex = 1
+  end
+  if nextIndex > appCount then
+    nextIndex = appCount
+  end
+  return nextIndex
+end
+
+function layout.pageFor(index, pageSize)
+  if pageSize <= 0 or index < 1 then
+    return 1
+  end
+  return math.floor((index - 1) / pageSize) + 1
+end
+
 function layout.cellOrigin(col, row)
   local x = (1 + layout.MARGIN) + col * (layout.CELL_W + layout.GAP)
   local y = (2 + layout.MARGIN) + row * (layout.CELL_H + layout.GAP)

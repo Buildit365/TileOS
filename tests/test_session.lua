@@ -60,6 +60,32 @@ T.test("a child exit resumes the parent and an error stays until Home", function
   T.assertEq(state.screen, "home")
 end)
 
+T.test("arrow keys move the highlight and enter opens it", function()
+  local session = dofile("os/session.lua")
+  local state, effect = session.reduce(session.new(), { type = "key", code = 205, held = false }, ctx(51, 19, 3))
+  T.assertEq(effect, "move")
+  T.assertEq(state.cursor, 2)
+  T.assertEq(state.screen, "home")
+  state, effect = session.reduce(state, { type = "key", code = 28, held = false }, ctx(51, 19, 3))
+  T.assertEq(effect, "launch")
+  T.assertEq(state.stack[1].label, "A2")
+  state = session.new()
+  state, effect = session.reduce(state, { type = "key", code = 28, held = true }, ctx(51, 19, 3))
+  T.assertEq(effect, nil)
+  T.assertEq(state.screen, "home")
+  state, effect = session.reduce(session.new(), { type = "key", code = 208, held = false }, ctx(51, 19, 40))
+  T.assertEq(state.cursor, 9)
+  state, effect = session.reduce(state, { type = "key", code = 205, held = false }, ctx(51, 19, 40))
+  local page = state.page
+  while state.cursor < 32 and page == 1 do
+    state, effect = session.reduce(state, { type = "key", code = 205, held = false }, ctx(51, 19, 40))
+    page = state.page
+  end
+  state, effect = session.reduce(state, { type = "key", code = 205, held = false }, ctx(51, 19, 40))
+  T.assertEq(state.cursor, 33)
+  T.assertEq(state.page, 2)
+end)
+
 T.test("page arrows clamp and a too-small click clears the display", function()
   local session = dofile("os/session.lua")
   local state, effect = session.reduce(session.new(), { type = "click", x = 51, y = 1 }, ctx(51, 19, 40))

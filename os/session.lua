@@ -1,4 +1,5 @@
 local layout = require("layout")
+local input = require("input")
 
 local session = {}
 
@@ -6,6 +7,7 @@ function session.new()
   return {
     screen = "home",
     page = 1,
+    cursor = 1,
     stack = {},
     error = nil,
   }
@@ -34,6 +36,7 @@ function session.reduce(state, event, ctx)
   local nextState = {
     screen = state.screen,
     page = state.page,
+    cursor = state.cursor or 1,
     stack = copyStack(state.stack),
     error = state.error,
   }
@@ -51,6 +54,9 @@ function session.reduce(state, event, ctx)
   if ctx.metrics.tooSmall or nextState.screen == "toosmall" then
     nextState.screen = "toosmall"
     if event.type == "click" and layout.tooSmallHit(event.x, event.y) == "use_computer" then
+      return nextState, "clear_display"
+    end
+    if event.type == "key" and input.isEnter(event.code) and not event.held then
       return nextState, "clear_display"
     end
     return nextState, nil
@@ -99,12 +105,14 @@ function session.reduce(state, event, ctx)
     if bar == "prev" then
       if nextState.page > 1 then
         nextState.page = nextState.page - 1
+        nextState.cursor = (nextState.page - 1) * ctx.metrics.pageSize + 1
       end
       return nextState, nil
     end
     if bar == "next" then
       if nextState.page < pages then
         nextState.page = nextState.page + 1
+        nextState.cursor = (nextState.page - 1) * ctx.metrics.pageSize + 1
       end
       return nextState, nil
     end
@@ -112,6 +120,7 @@ function session.reduce(state, event, ctx)
       local index = layout.hit(ctx.metrics, event.x, event.y, nextState.page, #ctx.apps)
       if index then
         local app = ctx.apps[index]
+        nextState.cursor = index
         nextState.stack = {
           {
             path = app.path,
@@ -124,6 +133,38 @@ function session.reduce(state, event, ctx)
         nextState.error = nil
         return nextState, "launch"
       end
+    end
+  end
+
+  if event.type == "key" and nextState.screen == "home" then
+    local count = #ctx.apps
+    if count > 0 and input.direction(event.code) then
+      nextState.cursor = layout.step(ctx.metrics, nextState.cursor, count, input.direction(event.code))
+      nextState.page = layout.pageFor(nextState.cursor, ctx.metrics.pageSize)
+      withPage(nextState, ctx)
+      return nextState, "move"
+    end
+    if count > 0 and input.isEnter(event.code) and not event.held then
+      local index = nextState.cursor or 1
+      if index < 1 then
+        index = 1
+      end
+      if index > count then
+        index = count
+      end
+      local app = ctx.apps[index]
+      nextState.cursor = index
+      nextState.stack = {
+        {
+          path = app.path,
+          args = {},
+          label = app.label,
+          id = app.id,
+        },
+      }
+      nextState.screen = "app"
+      nextState.error = nil
+      return nextState, "launch"
     end
   end
 

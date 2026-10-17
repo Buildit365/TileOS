@@ -1,3 +1,5 @@
+local input = require("input")
+
 local settingsui = {}
 
 function settingsui.monitors(peripheral)
@@ -15,6 +17,7 @@ end
 function settingsui.load(peripheral, term, activeName)
   return {
     page = 1,
+    cursor = 1,
     confirm = false,
     selected = activeName or "terminal",
     color = term.isColor(),
@@ -32,28 +35,39 @@ local function items(model)
   return list
 end
 
+local function writeRow(term, y, text, w, selected)
+  if selected then
+    term.setBackgroundColor(colors.black)
+    term.setTextColor(colors.white)
+  else
+    term.setBackgroundColor(colors.white)
+    term.setTextColor(colors.black)
+  end
+  term.setCursorPos(1, y)
+  local shown = text:sub(1, w)
+  if selected and #shown < w then
+    shown = shown .. string.rep(" ", w - #shown)
+  end
+  term.write(shown)
+end
+
 function settingsui.draw(term, model)
   local w, h = term.getSize()
   term.setBackgroundColor(colors.white)
   term.setTextColor(colors.black)
   term.clear()
   if model.confirm then
-    term.setCursorPos(1, 1)
-    term.write("Exit to CraftOS?")
-    term.setCursorPos(1, 3)
-    term.write("Yes")
-    term.setCursorPos(1, 4)
-    term.write("No")
+    writeRow(term, 1, "Exit to CraftOS?", w, false)
+    writeRow(term, 3, "Yes", w, model.cursor == 1)
+    writeRow(term, 4, "No", w, model.cursor == 2)
     return
   end
-  term.setCursorPos(1, 1)
   if model.color then
-    term.write("Screen: Color")
+    writeRow(term, 1, "Screen: Color", w, false)
   else
-    term.write("Screen: Gray")
+    writeRow(term, 1, "Screen: Gray", w, false)
   end
-  term.setCursorPos(1, 3)
-  term.write("Display")
+  writeRow(term, 3, "Display", w, false)
   local list = items(model)
   local avail = h - 5
   if avail < 1 then
@@ -68,12 +82,10 @@ function settingsui.draw(term, model)
     local item = list[start + i]
     if item then
       local mark = item.name == model.selected and ">" or " "
-      term.setCursorPos(1, 4 + i)
-      term.write((mark .. " " .. item.text):sub(1, w))
+      writeRow(term, 4 + i, (mark .. " " .. item.text):sub(1, w), w, model.cursor == start + i)
     end
   end
-  term.setCursorPos(1, h)
-  term.write("Exit to CraftOS")
+  writeRow(term, h, "Exit to CraftOS", w, model.cursor == #list + 1)
 end
 
 function settingsui.click(model, term, x, y)
@@ -89,6 +101,7 @@ function settingsui.click(model, term, x, y)
   end
   if y == h and x <= 16 then
     model.confirm = true
+    model.cursor = 2
     return model, nil
   end
   local list = items(model)
@@ -105,6 +118,64 @@ function settingsui.click(model, term, x, y)
     end
   end
   return model, nil
+end
+
+function settingsui.key(model, term, code)
+  local way = input.direction(code)
+  local list = items(model)
+  if model.confirm then
+    local cursor = model.cursor
+    if cursor ~= 1 and cursor ~= 2 then
+      cursor = 2
+    end
+    if way == "up" or way == "left" then
+      cursor = 1
+    elseif way == "down" or way == "right" then
+      cursor = 2
+    end
+    model.cursor = cursor
+    if not input.isEnter(code) then
+      return model, nil
+    end
+    if cursor == 1 then
+      return model, { type = "exit_os" }
+    end
+    model.confirm = false
+    model.cursor = #list + 1
+    return model, nil
+  end
+  local total = #list + 1
+  local cursor = model.cursor or 1
+  if way == "up" or way == "left" then
+    cursor = cursor - 1
+  elseif way == "down" or way == "right" then
+    cursor = cursor + 1
+  end
+  if cursor < 1 then
+    cursor = 1
+  end
+  if cursor > total then
+    cursor = total
+  end
+  model.cursor = cursor
+  local _, h = term.getSize()
+  local avail = h - 5
+  if avail < 1 then
+    avail = 1
+  end
+  if cursor <= #list then
+    model.page = math.floor((cursor - 1) / avail) + 1
+  end
+  if not input.isEnter(code) then
+    return model, nil
+  end
+  if cursor > #list then
+    model.confirm = true
+    model.cursor = 2
+    return model, nil
+  end
+  local item = list[cursor]
+  return model, { type = "display", name = item.name }
 end
 
 return settingsui

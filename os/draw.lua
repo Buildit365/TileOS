@@ -66,17 +66,23 @@ local function paintIcon(term, x, y, app, isColor)
   put(term, x + 1, y, letter, colors.white, colors.black)
 end
 
-local function paintLabel(term, x, y, label)
+local function paintLabel(term, x, y, label, selected)
   label = label or ""
   if #label > 5 then
     label = label:sub(1, 5)
   end
   local pad = math.floor((5 - #label) / 2)
   local text = string.rep(" ", pad) .. label .. string.rep(" ", 5 - pad - #label)
-  put(term, x, y, text, colors.white, colors.black)
+  local bg = colors.white
+  local fg = colors.black
+  if selected then
+    bg = colors.black
+    fg = colors.white
+  end
+  put(term, x, y, text, bg, fg)
 end
 
-function draw.home(term, metrics, appList, page, isColor)
+function draw.home(term, metrics, appList, page, isColor, selected)
   fill(term, colors.white, colors.black)
   if metrics.pageSize <= 0 then
     return
@@ -89,7 +95,7 @@ function draw.home(term, metrics, appList, page, isColor)
       if app then
         local x, y = layout.cellOrigin(col, row)
         paintIcon(term, x + 1, y, app, isColor)
-        paintLabel(term, x, y + 2, app.label)
+        paintLabel(term, x, y + 2, app.label, index == selected)
       end
     end
   end

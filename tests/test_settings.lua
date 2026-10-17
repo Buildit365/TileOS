@@ -56,6 +56,29 @@ T.test("settings shows color, the selected display, and exit", function()
   T.assertEq(command.type, "exit_os")
 end)
 
+T.test("arrow keys move through settings and enter chooses the row", function()
+  local settingsui = dofile("os/settingsui.lua")
+  local peripheral = peripheralWith({
+    { name = "left", type = "monitor" },
+  })
+  local term = fakeTerm(30, 12, true)
+  local model = settingsui.load(peripheral, term, "terminal")
+  local command
+  model, command = settingsui.key(model, term, 208)
+  T.assertEq(command, nil)
+  T.assertEq(model.cursor, 2)
+  model, command = settingsui.key(model, term, 28)
+  T.assertEq(command.type, "display")
+  T.assertEq(command.name, "left")
+  model.cursor = 3
+  model, command = settingsui.key(model, term, 28)
+  T.assertEq(model.confirm, true)
+  T.assertEq(model.cursor, 2)
+  model, command = settingsui.key(model, term, 200)
+  model, command = settingsui.key(model, term, 28)
+  T.assertEq(command.type, "exit_os")
+end)
+
 T.test("a gray screen is labeled Gray", function()
   local settingsui = dofile("os/settingsui.lua")
   local term = fakeTerm(20, 10, false)

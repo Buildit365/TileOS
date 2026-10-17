@@ -58,6 +58,26 @@ T.test("clicks open directories, edit text, and run lua", function()
   T.assertDeep(command.args, { "/readme.txt" })
 end)
 
+T.test("arrow keys follow the file list and enter opens the highlighted row", function()
+  local filesui = dofile("os/filesui.lua")
+  local fs = fakeFs({
+    ["readme.txt"] = "hi",
+    ["apps/demo/main.lua"] = "print(1)\n",
+  })
+  local term = fakeTerm(20, 8, true)
+  local model = { path = "/", page = 1, cursor = 1 }
+  local command
+  model, command = filesui.key(model, term, 28, fs)
+  T.assertEq(model.path, "/apps")
+  T.assertEq(model.cursor, 1)
+  filesui.draw(term, model, fs)
+  local _, _, bg = term.cell(1, 2)
+  T.assertEq(bg, colors.black)
+  model, command = filesui.key(model, term, 208, fs)
+  model, command = filesui.key(model, term, 28, fs)
+  T.assertEq(model.path, "/apps/demo")
+end)
+
 T.test("a long directory pages from Prev and Next", function()
   local filesui = dofile("os/filesui.lua")
   local tree = {}

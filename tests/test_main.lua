@@ -216,6 +216,48 @@ T.test("exiting to CraftOS leaves a black screen even if the shell redirect clea
   T.assertEq(computer.line(10), string.rep(" ", 51))
 end)
 
+T.test("enter on the home grid opens the highlighted app", function()
+  local main = dofile("os/main.lua")
+  local fs = fakeFs({
+    ["apps/demo/main.lua"] = 'error("opened", 0)\n',
+  })
+  local computer = fakeTerm(51, 19, true)
+  local windows = {}
+  local result = main.run({
+    fs = fs,
+    osDir = "os",
+    native = function()
+      return computer
+    end,
+    current = function()
+      return computer
+    end,
+    wrap = function()
+      return nil
+    end,
+    peripheral = {
+      getNames = function()
+        return {}
+      end,
+      getType = function()
+        return nil
+      end,
+    },
+    window = function(parent, x, y, w, h)
+      local win = fakeTerm(w, h, parent.isColor())
+      windows[#windows + 1] = win
+      return win
+    end,
+    pullEventRaw = scripted({
+      { "key", 28, false },
+      { "terminate" },
+      { "terminate" },
+    }),
+  })
+  T.assertEq(result, "exit")
+  T.assertEq(windows[1].line(2):sub(1, 6), "opened")
+end)
+
 T.test("a tiny saved monitor shows the message and the computer still opens Tile", function()
   local main = dofile("os/main.lua")
   local fs = fakeFs({

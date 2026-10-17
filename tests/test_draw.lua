@@ -35,6 +35,11 @@ T.test("a letter tile and a painted tile land on the grid", function()
   local ch, _, bg = term.cell(4, 3)
   T.assertEq(ch, "F")
   T.assertEq(bg, colors.white)
+  draw.home(term, metrics, {
+    { label = "Files", accent = "blue", icon = nil },
+  }, 1, true, 1)
+  local _, _, selectedBg = term.cell(2, 5)
+  T.assertEq(selectedBg, colors.black)
 
   local picture = {
     { colors.white, colors.blue, colors.black },
