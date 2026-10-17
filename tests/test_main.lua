@@ -130,6 +130,92 @@ os.pullEvent()
   T.assertEq(shots[3].blink, true)
 end)
 
+T.test("exiting to CraftOS leaves a black screen even if the shell redirect clears white", function()
+  local main = dofile("os/main.lua")
+  local fs = fakeFs({
+    ["apps/demo/main.lua"] = "os.pullEvent()\n",
+  })
+  local computer = fakeTerm(51, 19, true)
+  local currentTerm = computer
+  local whiteClears = 0
+  local whiteout = {
+    setBackgroundColor = function()
+      computer.setBackgroundColor(colors.white)
+    end,
+    setTextColor = function()
+      computer.setTextColor(colors.black)
+    end,
+    clear = function()
+      whiteClears = whiteClears + 1
+      computer.setBackgroundColor(colors.white)
+      computer.setTextColor(colors.black)
+      computer.clear()
+    end,
+    setCursorPos = function(x, y)
+      computer.setCursorPos(x, y)
+    end,
+    setCursorBlink = function()
+    end,
+    getSize = function()
+      return computer.getSize()
+    end,
+    isColor = function()
+      return true
+    end,
+  }
+  local pulls = 0
+  local result = main.run({
+    fs = fs,
+    osDir = "os",
+    native = function()
+      return computer
+    end,
+    current = function()
+      return currentTerm
+    end,
+    redirect = function(target)
+      currentTerm = target
+    end,
+    wrap = function()
+      return nil
+    end,
+    peripheral = {
+      getNames = function()
+        return {}
+      end,
+      getType = function()
+        return nil
+      end,
+    },
+    window = function(parent, x, y, w, h)
+      return fakeTerm(w, h, parent.isColor())
+    end,
+    pullEventRaw = function()
+      pulls = pulls + 1
+      if pulls == 3 then
+        currentTerm = whiteout
+      end
+      local queue = {
+        { "mouse_click", 1, 2, 3 },
+        { "terminate" },
+        { "terminate" },
+      }
+      local event = queue[pulls]
+      if not event then
+        return nil
+      end
+      return unpack(event)
+    end,
+  })
+  T.assertEq(result, "exit")
+  T.assertEq(whiteClears, 0)
+  local _, _, top = computer.cell(1, 1)
+  local _, _, lower = computer.cell(20, 10)
+  T.assertEq(top, colors.black)
+  T.assertEq(lower, colors.black)
+  T.assertEq(computer.line(10), string.rep(" ", 51))
+end)
+
 T.test("a tiny saved monitor shows the message and the computer still opens Tile", function()
   local main = dofile("os/main.lua")
   local fs = fakeFs({

@@ -28,6 +28,7 @@ local function context(appList, ui)
 end
 
 function main.run(api)
+  local rootTerm = api.current and api.current() or nil
   local saved = config.read(api.fs)
   local view = display.resolve(api, saved)
   if view.clearSaved then
@@ -45,15 +46,22 @@ function main.run(api)
   end
 
   local function exitToShell()
+    if window then
+      clearTerm(window)
+      if type(window.setVisible) == "function" then
+        window.setVisible(false)
+      end
+    end
+    if rootTerm and type(api.redirect) == "function" then
+      api.redirect(rootTerm)
+    end
     clearTerm(view.ui)
     clearTerm(view.message)
     clearTerm(view.status)
     if api.native then
       clearTerm(api.native())
     end
-    if api.current then
-      clearTerm(api.current())
-    end
+    clearTerm(rootTerm)
     return "exit"
   end
   local state = session.new()
@@ -357,6 +365,9 @@ if runningAsProgram() then
     end,
     current = function()
       return term.current()
+    end,
+    redirect = function(target)
+      return term.redirect(target)
     end,
     wrap = function(name)
       if peripheral.getType(name) ~= "monitor" then
