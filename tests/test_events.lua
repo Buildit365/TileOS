@@ -9,7 +9,11 @@ T.test("computer clicks and monitor touches stay on their own screen", function(
     x = 4,
     y = 5,
   })
-  T.assertEq(events.classify(computer, { "mouse_click", 2, 4, 5 }).kind, "ignore")
+  T.assertDeep(events.classify(computer, { "mouse_click", 2, 4, 5 }), {
+    kind = "pointer",
+    x = 4,
+    y = 5,
+  })
   T.assertEq(events.classify(computer, { "monitor_touch", "left", 4, 5 }).kind, "ignore")
   T.assertDeep(events.classify(monitor, { "monitor_touch", "left", 2, 3 }), {
     kind = "pointer",

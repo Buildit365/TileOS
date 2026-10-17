@@ -35,9 +35,31 @@ T.test("no saved display uses the terminal Tile started on", function()
   }, nil)
   T.assertEq(view.mode, "ui")
   T.assertEq(view.ui.id, "left")
+  T.assertEq(view.active.kind, "computer")
+  T.assertEq(view.displayName, "terminal")
+end)
+
+T.test("a real monitor redirect listens for monitor touches", function()
+  local display = dofile("os/display.lua")
+  local computer = sized(51, 19, "computer", true)
+  local monitor = sized(15, 10, "left", true)
+  function monitor.setTextScale()
+  end
+  local view = display.resolve({
+    native = function()
+      return computer
+    end,
+    current = function()
+      return monitor
+    end,
+    wrap = function()
+      return nil
+    end,
+  }, nil)
+  T.assertEq(view.mode, "ui")
+  T.assertEq(view.ui.id, "left")
   T.assertEq(view.active.kind, "monitor")
   T.assertEq(view.active.name, "current")
-  T.assertEq(view.displayName, "current")
 end)
 
 T.test("terminal display forces the computer", function()

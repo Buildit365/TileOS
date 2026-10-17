@@ -17,7 +17,7 @@ function events.classify(active, event)
       return { kind = "ignore" }
     end
   else
-    if name == "mouse_click" and event[2] == 1 then
+    if name == "mouse_click" and (event[2] == 1 or event[2] == 2) then
       return pointer(event[3], event[4])
     end
     if name == "mouse_click" or name == "monitor_touch" then

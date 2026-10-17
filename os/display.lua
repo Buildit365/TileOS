@@ -16,34 +16,46 @@ local function monitorActive(name)
   return { kind = "monitor", name = name }
 end
 
+local function isMonitor(term)
+  return type(term) == "table" and type(term["set" .. "TextScale"]) == "function"
+end
+
 function display.resolve(api, saved)
   local native = api.native()
   local current = api.current()
   if saved == nil then
     local term = current or native
-    if large(term) then
-      if term == native then
+    if isMonitor(term) then
+      if large(term) then
         return {
           mode = "ui",
           ui = term,
+          status = native ~= term and native or nil,
+          active = monitorActive("current"),
+          displayName = "current",
+        }
+      end
+      if native ~= term and large(native) then
+        return {
+          mode = "split",
+          ui = native,
+          message = term,
+          messageSide = "current",
           active = computerActive(),
           displayName = "terminal",
         }
       end
       return {
-        mode = "ui",
-        ui = term,
-        status = native,
+        mode = "message",
+        message = term,
         active = monitorActive("current"),
         displayName = "current",
       }
     end
-    if term ~= native and large(native) then
+    if large(term) then
       return {
-        mode = "split",
-        ui = native,
-        message = term,
-        messageSide = "current",
+        mode = "ui",
+        ui = term,
         active = computerActive(),
         displayName = "terminal",
       }
@@ -51,7 +63,7 @@ function display.resolve(api, saved)
     return {
       mode = "message",
       message = term,
-      active = term == native and computerActive() or monitorActive("current"),
+      active = computerActive(),
       displayName = "terminal",
     }
   end
