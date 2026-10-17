@@ -1,7 +1,7 @@
 local filesui = require("filesui")
 local input = require("input")
 
-local model = { path = "/", page = 1, cursor = 1 }
+local model = { path = "/", page = 1, cursor = (tile and tile.keys) and 1 or nil }
 
 local function redraw()
   filesui.draw(term, model, fs)
@@ -21,7 +21,7 @@ while true do
     local command
     model, command = filesui.click(model, term, b, c, fs)
     apply(command)
-  elseif event == "key" and not (c and input.isEnter(a)) then
+  elseif event == "key" and tile and tile.keys and not (c and input.isEnter(a)) then
     local command
     model, command = filesui.key(model, term, a, fs)
     apply(command)

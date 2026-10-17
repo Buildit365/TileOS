@@ -1,23 +1,57 @@
 local config = {}
 local PATH = ".tile"
+local ORDER = { "display", "keys", "color" }
 
-function config.read(fs)
+local function readMap(fs)
+  local found = {}
   local handle = fs.open(PATH, "r")
   if not handle then
-    return nil
+    return found
   end
-  local line = handle.readLine()
+  local text = handle.readAll() or ""
   handle.close()
-  if not line then
-    return nil
+  for line in (text .. "\n"):gmatch("(.-)\r?\n") do
+    local key, value = line:match("^(%w+)=(%S+)$")
+    if key then
+      found[key] = value
+    end
   end
-  return line:match("^display=(%S+)$")
+  return found
+end
+
+local function writeMap(fs, map)
+  local handle = fs.open(PATH, "w")
+  for i = 1, #ORDER do
+    local key = ORDER[i]
+    if map[key] then
+      handle.write(key .. "=" .. map[key] .. "\n")
+    end
+  end
+  handle.close()
+end
+
+function config.read(fs)
+  return readMap(fs).display
 end
 
 function config.write(fs, name)
-  local handle = fs.open(PATH, "w")
-  handle.write("display=" .. tostring(name) .. "\n")
-  handle.close()
+  local map = readMap(fs)
+  map.display = tostring(name)
+  writeMap(fs, map)
+end
+
+function config.get(fs, key)
+  return readMap(fs)[key]
+end
+
+function config.set(fs, key, value)
+  local map = readMap(fs)
+  if value == nil or value == "" then
+    map[key] = nil
+  else
+    map[key] = tostring(value)
+  end
+  writeMap(fs, map)
 end
 
 return config

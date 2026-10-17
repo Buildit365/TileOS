@@ -2,7 +2,7 @@
 
 Tile is a Lua shell for the Minecraft mod CC:Tweaked on Minecraft 1.20.1. It opens to a grid of square icons. One app fills the screen at a time. The same program runs on a normal computer, an advanced computer, a pocket computer, an advanced pocket computer, and a monitor.
 
-Advanced screens draw icons in color. Basic screens draw the same shapes in white, light gray, gray, and black.
+Advanced screens draw icons in color. Basic screens draw the same shapes in white, light gray, gray, and black. An advanced screen can be switched to gray in Settings. A basic screen stays gray.
 
 ## Run the tests
 
@@ -38,7 +38,7 @@ Exit to CraftOS from Settings lasts until the next boot. The next boot opens Til
 ## Controls
 
 - Click an icon, or the five-character name under it, to open that app. Advanced computers, advanced pocket computers, and monitors can do this.
-- A normal computer and a normal pocket computer have no mouse. Open the screen, then use the arrow keys. The highlighted name is drawn in white on black. Enter opens that app. The same keys work in Files and Settings. Shell still uses normal CraftOS typing.
+- A normal computer and a normal pocket computer have no mouse. Arrow keys and Enter are on: the highlighted name is white on black, and Enter opens it. The same keys work in Files and Settings. On an advanced computer or advanced pocket computer those keys are off until Settings says `Keys: On`. Shell still uses normal CraftOS typing either way.
 - The top row is the bar. On the home screen it says `Tile`. When more than one page of icons exists, `<` and `>` sit at the right. Arrow keys also move onto the next page.
 - While an app is open, `Home` is in the first four columns of the bar. Home always returns to the grid.
 - Press Ctrl+T inside an app to return to the grid. Press Ctrl+T on the grid to leave Tile and drop into CraftOS. A tap is enough. The stop button on the computer screen does the same thing.

@@ -98,6 +98,7 @@ function runner.launch(spec)
 
   env.tile = {
     display = spec.displayName or "terminal",
+    keys = spec.keys and true or false,
   }
 
   function env.tile.push(path, args, label)

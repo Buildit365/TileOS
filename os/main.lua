@@ -36,6 +36,25 @@ function main.run(api)
     config.write(api.fs, "terminal")
   end
 
+  local function machineColor()
+    local native = api.native and api.native()
+    return native and native.isColor and native.isColor() and true or false
+  end
+
+  local function keysOn()
+    if not machineColor() then
+      return true
+    end
+    return config.get(api.fs, "keys") == "on"
+  end
+
+  local function colorOn(term)
+    if not (term and term.isColor and term.isColor()) then
+      return false
+    end
+    return config.get(api.fs, "color") ~= "gray"
+  end
+
   local function clearTerm(target)
     if type(target) ~= "table" or type(target.clear) ~= "function" then
       return
@@ -98,7 +117,7 @@ function main.run(api)
       return
     end
     if state.screen == "home" then
-      draw.home(ui, ctx.metrics, ctx.apps, state.page, ui.isColor(), state.cursor)
+      draw.home(ui, ctx.metrics, ctx.apps, state.page, colorOn(ui), keysOn() and state.cursor or nil)
       draw.bar(ui, {
         mode = "home",
         pages = layout.pageCount(#ctx.apps, ctx.metrics.pageSize),
@@ -173,6 +192,7 @@ function main.run(api)
       win = window,
       displayName = view.displayName or "terminal",
       parentEnv = _ENV,
+      keys = keysOn(),
     })
     frames[#frames + 1] = frame
     return dispatch(runner.pump(frame, nil))
@@ -334,7 +354,7 @@ function main.run(api)
         frame = nil
         window = nil
         paint()
-      elseif class.kind == "pointer" or (class.kind == "pass" and packed[1] == "key" and state.screen ~= "app") then
+      elseif class.kind == "pointer" or (class.kind == "pass" and packed[1] == "key" and state.screen ~= "app" and keysOn()) then
         local hadShell = stackHasShell(state.stack)
         local effect
         if class.kind == "pointer" then

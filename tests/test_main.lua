@@ -216,9 +216,52 @@ T.test("exiting to CraftOS leaves a black screen even if the shell redirect clea
   T.assertEq(computer.line(10), string.rep(" ", 51))
 end)
 
+T.test("an advanced computer ignores arrow keys until Keys is on", function()
+  local input = dofile("os/input.lua")
+  local main = dofile("os/main.lua")
+  local fs = fakeFs({
+    ["apps/demo/main.lua"] = 'error("opened", 0)\n',
+  })
+  local computer = fakeTerm(51, 19, true)
+  local windows = {}
+  local result = main.run({
+    fs = fs,
+    osDir = "os",
+    native = function()
+      return computer
+    end,
+    current = function()
+      return computer
+    end,
+    wrap = function()
+      return nil
+    end,
+    peripheral = {
+      getNames = function()
+        return {}
+      end,
+      getType = function()
+        return nil
+      end,
+    },
+    window = function(parent, x, y, w, h)
+      local win = fakeTerm(w, h, parent.isColor())
+      windows[#windows + 1] = win
+      return win
+    end,
+    pullEventRaw = scripted({
+      { "key", input.code("enter"), false },
+      { "terminate" },
+    }),
+  })
+  T.assertEq(result, "exit")
+  T.assertEq(#windows, 0)
+end)
+
 T.test("enter on the home grid opens the highlighted app", function()
   local main = dofile("os/main.lua")
   local fs = fakeFs({
+    [".tile"] = "keys=on\n",
     ["apps/demo/main.lua"] = 'error("opened", 0)\n',
   })
   local computer = fakeTerm(51, 19, true)
@@ -262,6 +305,7 @@ T.test("tapping Ctrl+T leaves an app and the next tap leaves Tile", function()
   local input = dofile("os/input.lua")
   local main = dofile("os/main.lua")
   local fs = fakeFs({
+    [".tile"] = "keys=on\n",
     ["apps/demo/main.lua"] = [[
 while true do
   os.pullEvent()
@@ -323,6 +367,7 @@ T.test("holding Ctrl+T does not leave the app and then exit as well", function()
   local input = dofile("os/input.lua")
   local main = dofile("os/main.lua")
   local fs = fakeFs({
+    [".tile"] = "keys=on\n",
     ["apps/demo/main.lua"] = [[
 while true do
   os.pullEvent()

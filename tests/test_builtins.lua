@@ -73,7 +73,7 @@ T.test("Settings saves a monitor and Shell loads the ROM shell", function()
     displayName = "terminal",
   })
   T.assertEq(runner.pump(settings, nil).kind, "wait")
-  local changed = runner.pump(settings, { "mouse_click", 1, 1, 5 })
+  local changed = runner.pump(settings, { "mouse_click", 1, 1, 6 })
   T.assertEq(changed.kind, "set_display")
   T.assertEq(changed.name, "left")
   local config = dofile("os/config.lua")
