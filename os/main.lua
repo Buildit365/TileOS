@@ -7,6 +7,7 @@ local draw = require("draw")
 local runner = require("runner")
 local layout = require("layout")
 local runtime = require("runtime")
+local tabs = require("tabs")
 
 local main = {}
 
@@ -120,6 +121,32 @@ function main.run(api)
 
   local dispatch
 
+  local function isShell(frame)
+    if type(frame) ~= "table" then
+      return false
+    end
+    if frame.id == "shell" then
+      return true
+    end
+    local path = frame.path
+    return type(path) == "string" and path:find("builtins/shell/main.lua", 1, true) ~= nil
+  end
+
+  local function stackHasShell(stack)
+    for i = 1, #stack do
+      if isShell(stack[i]) then
+        return true
+      end
+    end
+    return false
+  end
+
+  local function closeShellTabs(stack)
+    if stackHasShell(stack) then
+      tabs.closeExtras(multishell)
+    end
+  end
+
   local function launchTop()
     local top = state.stack[#state.stack]
     attachWindow()
@@ -155,8 +182,12 @@ function main.run(api)
       return nil
     end
     if result.kind == "terminated" then
+      local hadShell = stackHasShell(state.stack)
       local effect
       state, effect = session.reduce(state, { type = "terminate" }, ctx)
+      if hadShell then
+        closeShellTabs({ { id = "shell" } })
+      end
       if effect == "exit_os" then
         return exitToShell()
       end
@@ -167,8 +198,12 @@ function main.run(api)
       return nil
     end
     if result.kind == "exit" then
+      local hadShell = isShell(state.stack[#state.stack])
       local effect
       state, effect = session.reduce(state, { type = "child_done" }, ctx)
+      if hadShell and effect == "go_home" then
+        closeShellTabs({ { id = "shell" } })
+      end
       frames[#frames] = nil
       frame = frames[#frames]
       if effect == "resume" and frame then
@@ -237,8 +272,12 @@ function main.run(api)
         metrics = layout.metrics(view.message and view.message.getSize() or 1, 1),
       }
       if class.kind == "terminate" then
+        local hadShell = stackHasShell(state.stack)
         local effect
         state, effect = session.reduce(state, { type = "terminate" }, ctx)
+        if hadShell then
+          closeShellTabs({ { id = "shell" } })
+        end
         if effect == "exit_os" then
           return exitToShell()
         end
@@ -247,8 +286,12 @@ function main.run(api)
         window = nil
         paint()
       elseif class.kind == "pointer" then
+        local hadShell = stackHasShell(state.stack)
         local effect
         state, effect = session.reduce(state, { type = "click", x = class.x, y = class.y }, ctx)
+        if hadShell and effect == "go_home" then
+          closeShellTabs({ { id = "shell" } })
+        end
         if effect == "clear_display" then
           config.write(api.fs, "terminal")
           view = display.resolve(api, "terminal")
