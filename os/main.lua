@@ -32,6 +32,29 @@ function main.run(api)
   if view.clearSaved then
     config.write(api.fs, "terminal")
   end
+
+  local function clearTerm(target)
+    if type(target) ~= "table" or type(target.clear) ~= "function" then
+      return
+    end
+    draw.blank(target)
+    if type(target.setCursorBlink) == "function" then
+      target.setCursorBlink(false)
+    end
+  end
+
+  local function exitToShell()
+    clearTerm(view.ui)
+    clearTerm(view.message)
+    clearTerm(view.status)
+    if api.native then
+      clearTerm(api.native())
+    end
+    if api.current then
+      clearTerm(api.current())
+    end
+    return "exit"
+  end
   local state = session.new()
   local frames = {}
   local frame = nil
@@ -120,7 +143,7 @@ function main.run(api)
       return nil
     end
     if result.kind == "exit_os" then
-      return "exit"
+      return exitToShell()
     end
     local ctx = view.ui and context(listApps(), view.ui) or {
       apps = {},
@@ -135,7 +158,7 @@ function main.run(api)
       local effect
       state, effect = session.reduce(state, { type = "terminate" }, ctx)
       if effect == "exit_os" then
-        return "exit"
+        return exitToShell()
       end
       frames = {}
       frame = nil
@@ -217,7 +240,7 @@ function main.run(api)
         local effect
         state, effect = session.reduce(state, { type = "terminate" }, ctx)
         if effect == "exit_os" then
-          return "exit"
+          return exitToShell()
         end
         frames = {}
         frame = nil
@@ -242,12 +265,12 @@ function main.run(api)
           local exited = launchTop()
           paint()
           if exited == "exit" then
-            return "exit"
+            return exitToShell()
           end
         elseif state.screen == "app" and frame and not state.error and class.y >= 2 then
           local exited = forward({ "mouse_click", 1, class.x, class.y - 1 })
           if exited == "exit" then
-            return "exit"
+            return exitToShell()
           end
           paint()
         else
@@ -256,12 +279,12 @@ function main.run(api)
       elseif class.kind == "pointer_pass" and class.y and class.y >= 2 then
         local exited = forward({ class.name, class.button, class.x, class.y - 1 })
         if exited == "exit" then
-          return "exit"
+          return exitToShell()
         end
       elseif class.kind == "pass" then
         local exited = forward(packed)
         if exited == "exit" then
-          return "exit"
+          return exitToShell()
         end
       end
     end
