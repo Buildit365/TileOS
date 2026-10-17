@@ -42,6 +42,9 @@ function draw.bar(term, spec)
     put(term, w - 2, 1, "<", colors.gray, colors.white)
     put(term, w, 1, ">", colors.gray, colors.white)
   end
+  if type(term.setCursorBlink) == "function" then
+    term.setCursorBlink(false)
+  end
 end
 
 local function paintIcon(term, x, y, app, isColor)

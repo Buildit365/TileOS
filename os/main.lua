@@ -65,6 +65,12 @@ function main.run(api)
     return apps.discover(api.fs, api.osDir or "/os")
   end
 
+  local function restoreAppCursor()
+    if state.screen == "app" and window and type(window.restoreCursor) == "function" then
+      window.restoreCursor()
+    end
+  end
+
   local function paint()
     if view.mode == "message" then
       draw.tooSmall(view.message, false)
@@ -93,6 +99,7 @@ function main.run(api)
     end
     local top = state.stack[#state.stack]
     draw.bar(ui, { mode = "app", label = top and top.label or "" })
+    restoreAppCursor()
     if state.error and window then
       draw.error(window, state.error)
     end

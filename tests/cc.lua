@@ -24,6 +24,7 @@ local function fakeTerm(w, h, isColor)
   local fg = colors.white
   local bg = colors.black
   local curX, curY = 1, 1
+  local blink = false
   local buf = {}
   local term = {}
 
@@ -108,7 +109,12 @@ local function fakeTerm(w, h, isColor)
     end
   end
 
-  function term.setCursorBlink()
+  function term.setCursorBlink(on)
+    blink = on and true or false
+  end
+
+  function term.getCursorBlink()
+    return blink
   end
 
   function term.scroll()
